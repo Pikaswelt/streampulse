@@ -85,6 +85,9 @@ def cmd_run(args):
     try:
         metadata = stream_engine.fetch_metadata()
         console.log(f"[bold green]Connected to stream:[/bold green] {metadata.get('title')}")
+        if metadata.get("live_status") == "is_upcoming":
+            console.log("[bold yellow]Premiere has not started yet. Waiting for countdown to finish...[/bold yellow]")
+            stream_engine.wait_until_live(poll_interval_sec=10)
     except Exception as e:
         console.log(f"[bold yellow]Stream check notice:[/bold yellow] {e}")
 

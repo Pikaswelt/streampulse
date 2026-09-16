@@ -26,8 +26,10 @@ class StreamCapture:
         console.log(f"[cyan]Fetching stream metadata for:[/cyan] {self.stream_url}")
         cmd = [
             "yt-dlp",
+            "--js-runtimes", "node",
             "--dump-json",
             "--skip-download",
+            "--ignore-no-formats-error",
             "--no-warnings",
             self.stream_url,
         ]
@@ -35,11 +37,24 @@ class StreamCapture:
             res = subprocess.run(cmd, capture_output=True, text=True, check=True)
             self.metadata = json.loads(res.stdout)
             self.is_live = bool(self.metadata.get("is_live") or self.metadata.get("was_live"))
-            console.log(f"[green]Detected:[/green] '{self.metadata.get('title')}' by {self.metadata.get('uploader')}")
+            status = self.metadata.get("live_status", "unknown")
+            console.log(f"[green]Detected:[/green] '{self.metadata.get('title')}' by {self.metadata.get('uploader')} [Status: {status}]")
             return self.metadata
         except subprocess.CalledProcessError as e:
             console.log(f"[red]Error fetching metadata:[/red] {e.stderr}")
             raise RuntimeError(f"Could not inspect YouTube stream: {e.stderr}")
+
+    def wait_until_live(self, poll_interval_sec: int = 10):
+        """Wait until scheduled premiere goes live."""
+        console.log("[cyan]Checking if stream is live yet...[/cyan]")
+        while True:
+            meta = self.fetch_metadata()
+            status = meta.get("live_status")
+            if status in ["is_live", "was_live"] or not status:
+                console.log("[bold green]Stream is LIVE! Commencing capture...[/bold green]")
+                break
+            console.log(f"[dim]Status is '{status}'. Waiting {poll_interval_sec}s for premiere to begin...[/dim]")
+            time.sleep(poll_interval_sec)
 
     def get_direct_stream_urls(self) -> Tuple[Optional[str], Optional[str]]:
         """
@@ -78,6 +93,8 @@ class StreamCapture:
         
         ytdlp_cmd = [
             "yt-dlp",
+            "--js-runtimes", "node",
+            "--wait-for-video", "5",
             "-f", "ba/b",
             "-o", "-",
             "--no-warnings",
@@ -115,6 +132,8 @@ class StreamCapture:
         # Capture 1 video frame using yt-dlp + ffmpeg
         ytdlp_cmd = [
             "yt-dlp",
+            "--js-runtimes", "node",
+            "--wait-for-video", "5",
             "-f", "bv/b",
             "-o", "-",
             "--no-warnings",
