@@ -1,0 +1,27 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Output & Cache
+output/
+*.wav
+*.mp3
+*.jpg
+*.png
+!docs/assets/*.png
+!docs/assets/*.jpg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Configuration
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
